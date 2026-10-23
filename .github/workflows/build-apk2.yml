@@ -2,9 +2,6 @@ name: Build Jarvis APK 2
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - '.github/workflows/build-apk2.yml'
 
 permissions:
   contents: write
@@ -23,8 +20,16 @@ jobs:
       - name: Prepare Android SDK
         run: |
           SDKM="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-          yes | sudo env "JAVA_HOME=$JAVA_HOME" "$SDKM" --licenses > /dev/null || true
-          sudo env "JAVA_HOME=$JAVA_HOME" "$SDKM" "platforms;android-34" "build-tools;34.0.0"
+          yes | sudo env JAVA_HOME="$JAVA_HOME" "$SDKM" --licenses > /dev/null || true
+          sudo env JAVA_HOME="$JAVA_HOME" "$SDKM" "platforms;android-34" "build-tools;34.0.0"
+
+      - name: Create debug key
+        run: |
+          mkdir -p ~/.android
+          keytool -genkeypair -v -keystore ~/.android/debug.keystore \
+            -storepass android -alias androiddebugkey -keypass android \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US"
 
       - uses: gradle/actions/setup-gradle@v4
         with:
@@ -47,3 +52,4 @@ jobs:
           tag_name: jarvis-v${{ github.run_number }}
           name: Jarvis app v${{ github.run_number }}
           files: Jarvis.apk
+          
